@@ -42,6 +42,7 @@
     }
   </style>
 </head>
+
 <body class="min-h-screen font-display text-slate-900">
   <main class="pitch relative min-h-screen overflow-hidden px-4 py-6 md:px-8">
     <div class="confetti pointer-events-none absolute inset-0">
@@ -58,14 +59,12 @@
         <div class="grid gap-0 lg:grid-cols-[1.1fr_.9fr]">
           <div class="p-7 md:p-10">
             <p class="mb-3 inline-flex rounded-full bg-emerald-100 px-4 py-1 text-sm font-bold text-emerald-800">World Cup 2026 Sweepstake</p>
-            <h1 class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
-              Every match counts.
-            </h1>
+            <h1 class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 md:text-6xl">Every match counts.</h1>
             <p class="mt-4 max-w-2xl text-lg text-slate-600">
-              Participants collect points from five allocated teams: one strong, one mid-level, and three weak or very weak teams.
+              Live score feed updates the participant league table from real World Cup match data.
             </p>
 
-            <div class="mt-6 grid max-w-xl grid-cols-3 gap-3">
+            <div class="mt-6 grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-4">
               <div class="rounded-2xl bg-slate-950 p-4 text-white">
                 <p class="text-3xl font-black" id="participantCount">29</p>
                 <p class="text-xs uppercase tracking-wide text-slate-300">Players</p>
@@ -78,6 +77,15 @@
                 <p class="text-3xl font-black">3/1/0</p>
                 <p class="text-xs uppercase tracking-wide text-emerald-100">Scoring</p>
               </div>
+              <div class="rounded-2xl bg-sky-700 p-4 text-white">
+                <p class="text-lg font-black" id="feedState">Loading</p>
+                <p class="text-xs uppercase tracking-wide text-sky-100">Feed status</p>
+              </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <button id="refreshButton" class="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white shadow hover:bg-slate-800">Refresh scores</button>
+              <span id="lastUpdated" class="text-sm text-slate-500">Waiting for feed...</span>
             </div>
           </div>
 
@@ -96,6 +104,7 @@
         <button data-tab="table" class="tab rounded-2xl bg-white px-5 py-3 font-bold shadow">League Table</button>
         <button data-tab="participants" class="tab rounded-2xl px-5 py-3 font-bold text-white">Participants</button>
         <button data-tab="teams" class="tab rounded-2xl px-5 py-3 font-bold text-white">Teams</button>
+        <button data-tab="matches" class="tab rounded-2xl px-5 py-3 font-bold text-white">Matches</button>
         <button data-tab="rules" class="tab rounded-2xl px-5 py-3 font-bold text-white">Rules</button>
       </nav>
 
@@ -117,6 +126,7 @@
                 <th class="px-4 py-2">GD</th>
                 <th class="px-4 py-2">GF</th>
                 <th class="px-4 py-2">GA</th>
+                <th class="px-4 py-2">Played</th>
                 <th class="px-4 py-2">Teams</th>
               </tr>
             </thead>
@@ -132,8 +142,19 @@
 
       <section id="teams" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
         <h2 class="mb-4 text-2xl font-black">Country Registry</h2>
-        <p class="mb-4 text-slate-500">Countries are stable entities with FIFA codes and API mapping fields.</p>
+        <p class="mb-4 text-slate-500">Countries are stable entities. The live feed is mapped into these country IDs before scoring.</p>
         <div id="teamGrid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </section>
+
+      <section id="matches" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
+        <div class="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-black">World Cup Matches</h2>
+            <p class="text-slate-500">Fetched from the configured World Cup API feed.</p>
+          </div>
+          <p id="matchCount" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">0 matches</p>
+        </div>
+        <div id="matchList" class="grid gap-3"></div>
       </section>
 
       <section id="rules" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
@@ -143,27 +164,43 @@
           <div class="rounded-3xl bg-amber-50 p-5"><b>Tiebreakers</b><p>Points, goal difference, goals scored.</p></div>
           <div class="rounded-3xl bg-sky-50 p-5"><b>Prizes</b><p>Top three split the pot 60%, 30%, 10%.</p></div>
         </div>
+        <div class="mt-5 rounded-3xl bg-slate-50 p-5">
+          <b>Real data feed</b>
+          <p class="mt-1 text-slate-600">
+            This SPA fetches match data from <code class="rounded bg-white px-2 py-1">https://worldcup26.ir/get/games</code>.
+            If that endpoint changes shape or blocks browser CORS, place a tiny proxy in front of it and point <code class="rounded bg-white px-2 py-1">SCORE_FEED_URL</code> to your own endpoint.
+          </p>
+        </div>
       </section>
     </section>
   </main>
 
 <script>
+/**
+ * Live feed used by default.
+ * Source: worldcup26.ir public World Cup 2026 API.
+ * The adapter below is defensive because public APIs often change field names.
+ */
+const SCORE_FEED_URL = 'https://worldcup26.ir/get/games';
+
 const countries = [
-  ['ARG','Argentina','A','strong'],['BEL','Belgium','G','strong'],['BRA','Brazil','C','strong'],['COL','Colombia','K','strong'],
-  ['CRO','Croatia','L','strong'],['ENG','England','L','strong'],['FRA','France','I','strong'],['GER','Germany','E','strong'],
-  ['NED','Netherlands','F','strong'],['POR','Portugal','K','strong'],['ESP','Spain','H','strong'],['URU','Uruguay','H','strong'],
-  ['AUS','Australia','D','mid'],['AUT','Austria','J','mid'],['CAN','Canada','B','mid'],['ECU','Ecuador','E','mid'],
-  ['JPN','Japan','F','mid'],['MEX','Mexico','A','mid'],['MAR','Morocco','C','mid'],['NOR','Norway','I','mid'],
-  ['SEN','Senegal','I','mid'],['KOR','South Korea','A','mid'],['SWE','Sweden','F','mid'],['SUI','Switzerland','B','mid'],
-  ['TUR','Türkiye','D','mid'],['USA','United States','D','mid'],['BIH','Bosnia and Herzegovina','B','weak'],['CIV',"Côte d'Ivoire",'E','weak'],
-  ['CZE','Czechia','A','weak'],['EGY','Egypt','G','weak'],['GHA','Ghana','L','weak'],['IRN','Iran','G','weak'],
-  ['PAR','Paraguay','D','weak'],['KSA','Saudi Arabia','H','weak'],['SCO','Scotland','C','weak'],['TUN','Tunisia','F','weak'],
-  ['ALG','Algeria','J','veryWeak'],['CPV','Cabo Verde','H','veryWeak'],['COD','Congo DR','K','veryWeak'],['CUW','Curaçao','E','veryWeak'],
-  ['HAI','Haiti','C','veryWeak'],['IRQ','Iraq','I','veryWeak'],['JOR','Jordan','J','veryWeak'],['NZL','New Zealand','G','veryWeak'],
-  ['PAN','Panama','L','veryWeak'],['QAT','Qatar','B','veryWeak'],['RSA','South Africa','A','veryWeak'],['UZB','Uzbekistan','K','veryWeak']
-].map(([id,name,group,pool]) => ({ id, name, fifaCode:id, apiFootballTeamId:null, aliases:[name], group, pool }));
+  ['ARG','Argentina','J','strong',['Argentina']],['BEL','Belgium','G','strong',['Belgium']],['BRA','Brazil','C','strong',['Brazil']],['COL','Colombia','K','strong',['Colombia']],
+  ['CRO','Croatia','L','strong',['Croatia']],['ENG','England','L','strong',['England']],['FRA','France','I','strong',['France']],['GER','Germany','E','strong',['Germany']],
+  ['NED','Netherlands','F','strong',['Netherlands','Holland']],['POR','Portugal','K','strong',['Portugal']],['ESP','Spain','H','strong',['Spain']],['URU','Uruguay','H','strong',['Uruguay']],
+  ['AUS','Australia','D','mid',['Australia']],['AUT','Austria','J','mid',['Austria']],['CAN','Canada','B','mid',['Canada']],['ECU','Ecuador','E','mid',['Ecuador']],
+  ['JPN','Japan','F','mid',['Japan']],['MEX','Mexico','A','mid',['Mexico']],['MAR','Morocco','C','mid',['Morocco']],['NOR','Norway','I','mid',['Norway']],
+  ['SEN','Senegal','I','mid',['Senegal']],['KOR','South Korea','A','mid',['South Korea','Korea Republic','Republic of Korea','Korea']],['SWE','Sweden','F','mid',['Sweden']],['SUI','Switzerland','B','mid',['Switzerland']],
+  ['TUR','Türkiye','D','mid',['Türkiye','Turkey','Turkiye']],['USA','United States','D','mid',['United States','USA','United States of America']],['BIH','Bosnia and Herzegovina','B','weak',['Bosnia and Herzegovina','Bosnia-Herzegovina','Bosnia']],['CIV',"Côte d'Ivoire",'E','weak',["Côte d'Ivoire","Cote d'Ivoire",'Ivory Coast']],
+  ['CZE','Czechia','A','weak',['Czechia','Czech Republic','CZ']],['EGY','Egypt','G','weak',['Egypt']],['GHA','Ghana','L','weak',['Ghana']],['IRN','Iran','G','weak',['Iran']],
+  ['PAR','Paraguay','D','weak',['Paraguay']],['KSA','Saudi Arabia','H','weak',['Saudi Arabia','KSA']],['SCO','Scotland','C','weak',['Scotland']],['TUN','Tunisia','F','weak',['Tunisia']],
+  ['ALG','Algeria','J','veryWeak',['Algeria']],['CPV','Cabo Verde','H','veryWeak',['Cabo Verde','Cape Verde']],['COD','Congo DR','K','veryWeak',['Congo DR','DR Congo','Congo Democratic Republic','Democratic Republic of the Congo']],['CUW','Curaçao','E','veryWeak',['Curaçao','Curacao']],
+  ['HAI','Haiti','C','veryWeak',['Haiti']],['IRQ','Iraq','I','veryWeak',['Iraq']],['JOR','Jordan','J','veryWeak',['Jordan']],['NZL','New Zealand','G','veryWeak',['New Zealand']],
+  ['PAN','Panama','L','veryWeak',['Panama']],['QAT','Qatar','B','veryWeak',['Qatar']],['RSA','South Africa','A','veryWeak',['South Africa']],['UZB','Uzbekistan','K','veryWeak',['Uzbekistan']]
+].map(([id,name,group,pool,aliases]) => ({ id, name, fifaCode:id, apiFootballTeamId:null, aliases, group, pool }));
 
 const byId = Object.fromEntries(countries.map(c => [c.id, c]));
+const aliasToId = new Map();
+countries.forEach(c => c.aliases.concat([c.name, c.id]).forEach(a => aliasToId.set(normaliseName(a), c.id)));
 
 const participants = [
   ['Joe',['BEL','AUT','KSA','CUW','CZE']], ['Lero',['BEL','CAN','CUW','ALG','PAN']],
@@ -183,18 +220,142 @@ const participants = [
   ['Gloria',['CRO','NOR','QAT','CIV','CZE']]
 ].map(([name, teamIds]) => ({ id:name.toLowerCase(), name, teamIds }));
 
-// Replace this with live API match data after normalising API teams into country IDs.
-const matches = [
-  {homeTeamId:'MEX', awayTeamId:'RSA', homeGoals:2, awayGoals:1, status:'FT'},
-  {homeTeamId:'BRA', awayTeamId:'MAR', homeGoals:1, awayGoals:1, status:'FT'},
-  {homeTeamId:'ENG', awayTeamId:'CRO', homeGoals:3, awayGoals:2, status:'FT'},
-  {homeTeamId:'ARG', awayTeamId:'AUT', homeGoals:2, awayGoals:0, status:'FT'},
-  {homeTeamId:'ESP', awayTeamId:'URU', homeGoals:1, awayGoals:2, status:'FT'}
-];
+let matches = [];
+
+function normaliseName(value) {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function findTeamId(value) {
+  if (!value) return null;
+  if (typeof value === 'object') {
+    return findTeamId(value.name_en || value.name || value.team_name || value.country || value.fifa_name || value.title);
+  }
+  const key = normaliseName(value);
+  return aliasToId.get(key) || null;
+}
+
+function firstDefined(...values) {
+  return values.find(v => v !== undefined && v !== null && v !== '');
+}
+
+function asNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isFinishedStatus(status) {
+  const s = String(status || '').toLowerCase();
+  return ['ft','finished','fulltime','full time','completed','ended','finished_match'].includes(s);
+}
+
+/**
+ * Turns varied API match shapes into the internal Match entity:
+ * { id, homeTeamId, awayTeamId, homeGoals, awayGoals, status, date, raw }
+ */
+function adaptApiMatch(raw, index) {
+  const homeName = firstDefined(
+    raw.home_team_name_en, raw.home_team, raw.homeTeam, raw.home, raw.team1, raw.team_1,
+    raw.home_team_en, raw.home_name, raw.homeTeamName,
+    raw?.teams?.home?.name, raw?.homeTeam?.name
+  );
+
+  const awayName = firstDefined(
+    raw.away_team_name_en, raw.away_team, raw.awayTeam, raw.away, raw.team2, raw.team_2,
+    raw.away_team_en, raw.away_name, raw.awayTeamName,
+    raw?.teams?.away?.name, raw?.awayTeam?.name
+  );
+
+  const homeTeamId = findTeamId(homeName);
+  const awayTeamId = findTeamId(awayName);
+
+  const homeGoals = asNumber(firstDefined(
+    raw.home_score, raw.homeScore, raw.score1, raw.home_goals, raw.goals_home,
+    raw?.goals?.home, raw?.score?.fulltime?.home, raw?.score?.home
+  ));
+
+  const awayGoals = asNumber(firstDefined(
+    raw.away_score, raw.awayScore, raw.score2, raw.away_goals, raw.goals_away,
+    raw?.goals?.away, raw?.score?.fulltime?.away, raw?.score?.away
+  ));
+
+  const finishedFlag = String(raw.finished || '').toUpperCase() === 'TRUE' ? 'FT' : undefined;
+  const status = firstDefined(finishedFlag, raw.time_elapsed, raw.status, raw.match_status, raw.state, raw.fixture?.status?.short, raw.fixture?.status?.long);
+  const date = firstDefined(raw.date, raw.match_date, raw.datetime, raw.fixture?.date);
+
+  if (!homeTeamId || !awayTeamId) return null;
+
+  return {
+    id: String(firstDefined(raw.id, raw.match_id, raw.fixture?.id, index)),
+    homeTeamId,
+    awayTeamId,
+    homeGoals,
+    awayGoals,
+    status: status || (homeGoals !== null && awayGoals !== null ? 'FT' : 'NS'),
+    date,
+    raw
+  };
+}
+
+function extractArrayFromApiPayload(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.response)) return payload.response;
+  if (Array.isArray(payload.games)) return payload.games;
+  if (Array.isArray(payload.matches)) return payload.matches;
+  if (Array.isArray(payload.fixtures)) return payload.fixtures;
+  if (payload.data && Array.isArray(payload.data.games)) return payload.data.games;
+  return [];
+}
+
+async function fetchRealMatches() {
+  feedState.textContent = 'Loading';
+  feedState.parentElement.className = 'rounded-2xl bg-sky-700 p-4 text-white';
+
+  const res = await fetch(SCORE_FEED_URL, { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error(`Score feed returned HTTP ${res.status}`);
+  const payload = await res.json();
+
+  const rawMatches = extractArrayFromApiPayload(payload);
+  const adapted = rawMatches.map(adaptApiMatch).filter(Boolean);
+
+  if (!adapted.length) {
+    throw new Error('Feed loaded, but no matches could be mapped into the country registry.');
+  }
+
+  matches = adapted;
+  feedState.textContent = 'Live';
+  feedState.parentElement.className = 'rounded-2xl bg-emerald-700 p-4 text-white';
+  lastUpdated.textContent = `Updated ${new Date().toLocaleString()} · ${matches.length} mapped matches`;
+  renderAll();
+}
+
+async function refreshData() {
+  try {
+    await fetchRealMatches();
+  } catch (error) {
+    console.warn(error);
+    matches = [];
+    feedState.textContent = 'Feed error';
+    feedState.parentElement.className = 'rounded-2xl bg-red-600 p-4 text-white';
+    lastUpdated.textContent = `${error.message}. Table is showing zero until the feed is reachable.`;
+    renderAll();
+  }
+}
+
+function isScorable(m) {
+  return isFinishedStatus(m.status) && m.homeGoals !== null && m.awayGoals !== null;
+}
 
 function teamStats(teamId) {
   const s = { points:0, gf:0, ga:0, gd:0, played:0 };
-  matches.filter(m => m.status === 'FT' && (m.homeTeamId === teamId || m.awayTeamId === teamId)).forEach(m => {
+  matches.filter(m => isScorable(m) && (m.homeTeamId === teamId || m.awayTeamId === teamId)).forEach(m => {
     const isHome = m.homeTeamId === teamId;
     const gf = isHome ? m.homeGoals : m.awayGoals;
     const ga = isHome ? m.awayGoals : m.homeGoals;
@@ -212,8 +373,9 @@ function participantStats(p) {
 }
 
 function poolBadge(pool) {
+  const labels = { strong:'Strong', mid:'Mid', weak:'Weak', veryWeak:'Very weak' };
   const cls = { strong:'bg-amber-100 text-amber-800', mid:'bg-sky-100 text-sky-800', weak:'bg-slate-100 text-slate-700', veryWeak:'bg-emerald-100 text-emerald-800' }[pool];
-  return `<span class="rounded-full ${cls} px-2 py-1 text-xs font-bold">${pool}</span>`;
+  return `<span class="rounded-full ${cls} px-2 py-1 text-xs font-bold">${labels[pool]}</span>`;
 }
 
 function renderStandings(filter='') {
@@ -229,6 +391,7 @@ function renderStandings(filter='') {
       <td class="px-4 py-4">${p.gd}</td>
       <td class="px-4 py-4">${p.gf}</td>
       <td class="px-4 py-4">${p.ga}</td>
+      <td class="px-4 py-4">${p.played}</td>
       <td class="rounded-r-2xl px-4 py-4">
         <div class="flex flex-wrap gap-2">${p.teamIds.map(id => `<span class="rounded-full bg-slate-100 px-3 py-1 text-sm">${byId[id].name}</span>`).join('')}</div>
       </td>
@@ -241,8 +404,12 @@ function renderCards() {
       <h3 class="mb-3 text-xl font-black">${p.name}</h3>
       <div class="space-y-2">${p.teamIds.map(id => {
         const c = byId[id];
-        return `<div class="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
-          <span>${c.name} <small class="text-slate-400">Group ${c.group}</small></span>${poolBadge(c.pool)}
+        const s = teamStats(id);
+        return `<div class="rounded-2xl bg-slate-50 px-3 py-2">
+          <div class="flex items-center justify-between gap-3">
+            <span>${c.name} <small class="text-slate-400">Group ${c.group}</small></span>${poolBadge(c.pool)}
+          </div>
+          <div class="mt-1 text-xs text-slate-500">${s.points} pts · ${s.gf} GF · ${s.gd} GD</div>
         </div>`
       }).join('')}</div>
     </article>`).join('');
@@ -255,7 +422,38 @@ function renderTeams() {
         <b>${c.name}</b><span class="font-mono text-sm text-slate-400">${c.fifaCode}</span>
       </div>
       <div class="mt-2 flex items-center gap-2"><span class="rounded-full bg-slate-950 px-2 py-1 text-xs font-bold text-white">Group ${c.group}</span>${poolBadge(c.pool)}</div>
+      <p class="mt-2 text-xs text-slate-400">Aliases: ${c.aliases.slice(0,3).join(', ')}</p>
     </div>`).join('');
+}
+
+function renderMatches() {
+  matchCount.textContent = `${matches.length} matches`;
+  if (!matches.length) {
+    matchList.innerHTML = `<div class="rounded-3xl bg-slate-50 p-6 text-slate-500">No matches loaded yet.</div>`;
+    return;
+  }
+
+  matchList.innerHTML = matches
+    .slice()
+    .sort((a,b) => String(a.date || '').localeCompare(String(b.date || '')))
+    .map(m => `
+      <div class="grid gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-100 md:grid-cols-[1fr_auto_1fr_auto] md:items-center">
+        <div class="font-bold">${byId[m.homeTeamId].name}</div>
+        <div class="rounded-2xl bg-slate-950 px-4 py-2 text-center font-black text-white">
+          ${m.homeGoals ?? '-'} : ${m.awayGoals ?? '-'}
+        </div>
+        <div class="font-bold md:text-right">${byId[m.awayTeamId].name}</div>
+        <div class="text-sm text-slate-500">${m.status || 'NS'}</div>
+      </div>
+    `).join('');
+}
+
+function renderAll() {
+  renderStandings(search.value || '');
+  renderCards();
+  renderTeams();
+  renderMatches();
+  participantCount.textContent = participants.length;
 }
 
 document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
@@ -266,11 +464,11 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
 }));
 
 search.addEventListener('input', e => renderStandings(e.target.value));
+refreshButton.addEventListener('click', refreshData);
 
-renderStandings();
-renderCards();
-renderTeams();
-participantCount.textContent = participants.length;
+renderAll();
+refreshData();
+setInterval(refreshData, 5 * 60 * 1000);
 </script>
 </body>
 </html>
