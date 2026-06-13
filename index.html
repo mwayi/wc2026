@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Cup Sweepstake League</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { display: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          boxShadow: { soft: '0 24px 80px rgba(15, 23, 42, 0.18)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 15% 12%, rgba(250,204,21,.22), transparent 24%),
+        radial-gradient(circle at 80% 8%, rgba(59,130,246,.18), transparent 22%),
+        linear-gradient(135deg, #0f5f37 0%, #2f8f46 42%, #0e7490 100%);
+    }
+    .pitch {
+      background-image:
+        linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255,255,255,.08) 2px, transparent 2px),
+        radial-gradient(circle at center, rgba(255,255,255,.16), transparent 28%);
+      background-size: 52px 52px, 52px 52px, 100% 100%;
+    }
+    .confetti span {
+      position: absolute;
+      width: 14px;
+      height: 28px;
+      border-radius: 3px;
+      opacity: .9;
+      transform: rotate(var(--r));
+      left: var(--x);
+      top: var(--y);
+      background: var(--c);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-display text-slate-900">
+  <main class="pitch relative min-h-screen overflow-hidden px-4 py-6 md:px-8">
+    <div class="confetti pointer-events-none absolute inset-0">
+      <span style="--x:8%;--y:12%;--r:22deg;--c:#facc15"></span>
+      <span style="--x:18%;--y:30%;--r:-18deg;--c:#ef4444"></span>
+      <span style="--x:33%;--y:10%;--r:54deg;--c:#2563eb"></span>
+      <span style="--x:72%;--y:16%;--r:-40deg;--c:#facc15"></span>
+      <span style="--x:86%;--y:34%;--r:30deg;--c:#ef4444"></span>
+      <span style="--x:91%;--y:9%;--r:64deg;--c:#16a34a"></span>
+    </div>
+
+    <section class="relative mx-auto max-w-7xl">
+      <header class="mb-6 overflow-hidden rounded-[2rem] bg-white/90 shadow-soft ring-1 ring-white/60 backdrop-blur">
+        <div class="grid gap-0 lg:grid-cols-[1.1fr_.9fr]">
+          <div class="p-7 md:p-10">
+            <p class="mb-3 inline-flex rounded-full bg-emerald-100 px-4 py-1 text-sm font-bold text-emerald-800">World Cup 2026 Sweepstake</p>
+            <h1 class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
+              Every match counts.
+            </h1>
+            <p class="mt-4 max-w-2xl text-lg text-slate-600">
+              Participants collect points from five allocated teams: one strong, one mid-level, and three weak or very weak teams.
+            </p>
+
+            <div class="mt-6 grid max-w-xl grid-cols-3 gap-3">
+              <div class="rounded-2xl bg-slate-950 p-4 text-white">
+                <p class="text-3xl font-black" id="participantCount">29</p>
+                <p class="text-xs uppercase tracking-wide text-slate-300">Players</p>
+              </div>
+              <div class="rounded-2xl bg-amber-400 p-4 text-slate-950">
+                <p class="text-3xl font-black">5</p>
+                <p class="text-xs uppercase tracking-wide font-bold">Teams each</p>
+              </div>
+              <div class="rounded-2xl bg-emerald-600 p-4 text-white">
+                <p class="text-3xl font-black">3/1/0</p>
+                <p class="text-xs uppercase tracking-wide text-emerald-100">Scoring</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative min-h-72 bg-gradient-to-br from-emerald-500 via-sky-500 to-amber-300 p-8">
+            <div class="absolute inset-0 opacity-30 pitch"></div>
+            <div class="relative flex h-full items-center justify-center">
+              <div class="rounded-full bg-white/30 p-8 ring-8 ring-white/20">
+                <div class="text-center text-8xl drop-shadow-xl">🏆</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="mb-5 flex flex-wrap gap-2 rounded-3xl bg-white/20 p-2 backdrop-blur">
+        <button data-tab="table" class="tab rounded-2xl bg-white px-5 py-3 font-bold shadow">League Table</button>
+        <button data-tab="participants" class="tab rounded-2xl px-5 py-3 font-bold text-white">Participants</button>
+        <button data-tab="teams" class="tab rounded-2xl px-5 py-3 font-bold text-white">Teams</button>
+        <button data-tab="rules" class="tab rounded-2xl px-5 py-3 font-bold text-white">Rules</button>
+      </nav>
+
+      <section id="table" class="panel rounded-[2rem] bg-white/95 p-4 shadow-soft backdrop-blur md:p-6">
+        <div class="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+          <div>
+            <h2 class="text-2xl font-black">Sweepstake League Table</h2>
+            <p class="text-slate-500">Sorted by points, goal difference, then goals scored.</p>
+          </div>
+          <input id="search" placeholder="Search participant or team..." class="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-200" />
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[900px] border-separate border-spacing-y-2">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wide text-slate-500">
+                <th class="px-4 py-2">Rank</th>
+                <th class="px-4 py-2">Participant</th>
+                <th class="px-4 py-2">Pts</th>
+                <th class="px-4 py-2">GD</th>
+                <th class="px-4 py-2">GF</th>
+                <th class="px-4 py-2">GA</th>
+                <th class="px-4 py-2">Teams</th>
+              </tr>
+            </thead>
+            <tbody id="standings"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="participants" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
+        <h2 class="mb-4 text-2xl font-black">Participants and Teams</h2>
+        <div id="participantCards" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+      </section>
+
+      <section id="teams" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
+        <h2 class="mb-4 text-2xl font-black">Country Registry</h2>
+        <p class="mb-4 text-slate-500">Countries are stable entities with FIFA codes and API mapping fields.</p>
+        <div id="teamGrid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </section>
+
+      <section id="rules" class="panel hidden rounded-[2rem] bg-white/95 p-6 shadow-soft backdrop-blur">
+        <h2 class="mb-4 text-2xl font-black">Rules</h2>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="rounded-3xl bg-emerald-50 p-5"><b>Scoring</b><p>Win = 3, Draw = 1, Loss = 0.</p></div>
+          <div class="rounded-3xl bg-amber-50 p-5"><b>Tiebreakers</b><p>Points, goal difference, goals scored.</p></div>
+          <div class="rounded-3xl bg-sky-50 p-5"><b>Prizes</b><p>Top three split the pot 60%, 30%, 10%.</p></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+<script>
+const countries = [
+  ['ARG','Argentina','A','strong'],['BEL','Belgium','G','strong'],['BRA','Brazil','C','strong'],['COL','Colombia','K','strong'],
+  ['CRO','Croatia','L','strong'],['ENG','England','L','strong'],['FRA','France','I','strong'],['GER','Germany','E','strong'],
+  ['NED','Netherlands','F','strong'],['POR','Portugal','K','strong'],['ESP','Spain','H','strong'],['URU','Uruguay','H','strong'],
+  ['AUS','Australia','D','mid'],['AUT','Austria','J','mid'],['CAN','Canada','B','mid'],['ECU','Ecuador','E','mid'],
+  ['JPN','Japan','F','mid'],['MEX','Mexico','A','mid'],['MAR','Morocco','C','mid'],['NOR','Norway','I','mid'],
+  ['SEN','Senegal','I','mid'],['KOR','South Korea','A','mid'],['SWE','Sweden','F','mid'],['SUI','Switzerland','B','mid'],
+  ['TUR','Türkiye','D','mid'],['USA','United States','D','mid'],['BIH','Bosnia and Herzegovina','B','weak'],['CIV',"Côte d'Ivoire",'E','weak'],
+  ['CZE','Czechia','A','weak'],['EGY','Egypt','G','weak'],['GHA','Ghana','L','weak'],['IRN','Iran','G','weak'],
+  ['PAR','Paraguay','D','weak'],['KSA','Saudi Arabia','H','weak'],['SCO','Scotland','C','weak'],['TUN','Tunisia','F','weak'],
+  ['ALG','Algeria','J','veryWeak'],['CPV','Cabo Verde','H','veryWeak'],['COD','Congo DR','K','veryWeak'],['CUW','Curaçao','E','veryWeak'],
+  ['HAI','Haiti','C','veryWeak'],['IRQ','Iraq','I','veryWeak'],['JOR','Jordan','J','veryWeak'],['NZL','New Zealand','G','veryWeak'],
+  ['PAN','Panama','L','veryWeak'],['QAT','Qatar','B','veryWeak'],['RSA','South Africa','A','veryWeak'],['UZB','Uzbekistan','K','veryWeak']
+].map(([id,name,group,pool]) => ({ id, name, fifaCode:id, apiFootballTeamId:null, aliases:[name], group, pool }));
+
+const byId = Object.fromEntries(countries.map(c => [c.id, c]));
+
+const participants = [
+  ['Joe',['BEL','AUT','KSA','CUW','CZE']], ['Lero',['BEL','CAN','CUW','ALG','PAN']],
+  ['Fortune',['POR','NOR','HAI','KSA','ALG']], ['Chimwe',['ENG','AUS','CUW','EGY','CPV']],
+  ['Mbuya',['COL','USA','NZL','GHA','HAI']], ['Luwi',['URU','KOR','JOR','QAT','IRN']],
+  ['Mbumba',['COL','USA','PAN','TUN','CPV']], ['Jessica',['BRA','TUR','KSA','NZL','RSA']],
+  ['Mwati',['COL','AUS','EGY','PAN','KSA']], ['Atarah',['FRA','KOR','CIV','SCO','ALG']],
+  ['Keshaun',['ENG','AUS','CUW','IRQ','CPV']], ['Frances',['GER','SWE','EGY','HAI','PAN']],
+  ['Wone',['POR','MEX','TUN','ALG','NZL']], ['Mwayi',['BEL','CAN','RSA','IRQ','UZB']],
+  ['Kenzo',['GER','MAR','COD','JOR','CPV']], ['Ash',['NED','AUT','GHA','UZB','IRQ']],
+  ['Ivy',['ARG','ECU','COD','HAI','RSA']], ['Daxon',['ARG','TUR','RSA','SCO','BIH']],
+  ['Mizah',['ARG','SUI','EGY','TUN','CIV']], ['Amama',['ESP','SUI','SCO','PAR','GHA']],
+  ['Jimmy',['NED','MEX','IRN','CIV','SCO']], ['Sam',['CRO','SEN','PAR','UZB','TUN']],
+  ['Ruth',['BRA','SEN','GHA','CZE','BIH']], ['Reggie',['BRA','ECU','JOR','COD','NZL']],
+  ['Bob',['URU','MAR','PAR','COD','BIH']], ['Phillis',['FRA','JPN','JOR','IRN','QAT']],
+  ['Trevor',['ESP','SWE','BIH','PAR','IRN']], ['Adrian',['CRO','JPN','CZE','IRQ','QAT']],
+  ['Gloria',['CRO','NOR','QAT','CIV','CZE']]
+].map(([name, teamIds]) => ({ id:name.toLowerCase(), name, teamIds }));
+
+// Replace this with live API match data after normalising API teams into country IDs.
+const matches = [
+  {homeTeamId:'MEX', awayTeamId:'RSA', homeGoals:2, awayGoals:1, status:'FT'},
+  {homeTeamId:'BRA', awayTeamId:'MAR', homeGoals:1, awayGoals:1, status:'FT'},
+  {homeTeamId:'ENG', awayTeamId:'CRO', homeGoals:3, awayGoals:2, status:'FT'},
+  {homeTeamId:'ARG', awayTeamId:'AUT', homeGoals:2, awayGoals:0, status:'FT'},
+  {homeTeamId:'ESP', awayTeamId:'URU', homeGoals:1, awayGoals:2, status:'FT'}
+];
+
+function teamStats(teamId) {
+  const s = { points:0, gf:0, ga:0, gd:0, played:0 };
+  matches.filter(m => m.status === 'FT' && (m.homeTeamId === teamId || m.awayTeamId === teamId)).forEach(m => {
+    const isHome = m.homeTeamId === teamId;
+    const gf = isHome ? m.homeGoals : m.awayGoals;
+    const ga = isHome ? m.awayGoals : m.homeGoals;
+    s.played++; s.gf += gf; s.ga += ga;
+    s.points += gf > ga ? 3 : gf === ga ? 1 : 0;
+  });
+  s.gd = s.gf - s.ga;
+  return s;
+}
+
+function participantStats(p) {
+  return p.teamIds.map(teamStats).reduce((a,s) => ({
+    played:a.played+s.played, points:a.points+s.points, gf:a.gf+s.gf, ga:a.ga+s.ga, gd:a.gd+s.gd
+  }), {played:0, points:0, gf:0, ga:0, gd:0});
+}
+
+function poolBadge(pool) {
+  const cls = { strong:'bg-amber-100 text-amber-800', mid:'bg-sky-100 text-sky-800', weak:'bg-slate-100 text-slate-700', veryWeak:'bg-emerald-100 text-emerald-800' }[pool];
+  return `<span class="rounded-full ${cls} px-2 py-1 text-xs font-bold">${pool}</span>`;
+}
+
+function renderStandings(filter='') {
+  const rows = participants.map(p => ({...p, ...participantStats(p)}))
+    .filter(p => (p.name + p.teamIds.map(id => byId[id].name).join(' ')).toLowerCase().includes(filter.toLowerCase()))
+    .sort((a,b) => b.points-a.points || b.gd-a.gd || b.gf-a.gf || a.name.localeCompare(b.name));
+
+  standings.innerHTML = rows.map((p,i) => `
+    <tr class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+      <td class="rounded-l-2xl px-4 py-4 font-black">${i+1}</td>
+      <td class="px-4 py-4 font-black">${p.name}</td>
+      <td class="px-4 py-4 text-2xl font-black text-emerald-700">${p.points}</td>
+      <td class="px-4 py-4">${p.gd}</td>
+      <td class="px-4 py-4">${p.gf}</td>
+      <td class="px-4 py-4">${p.ga}</td>
+      <td class="rounded-r-2xl px-4 py-4">
+        <div class="flex flex-wrap gap-2">${p.teamIds.map(id => `<span class="rounded-full bg-slate-100 px-3 py-1 text-sm">${byId[id].name}</span>`).join('')}</div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderCards() {
+  participantCards.innerHTML = participants.map(p => `
+    <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+      <h3 class="mb-3 text-xl font-black">${p.name}</h3>
+      <div class="space-y-2">${p.teamIds.map(id => {
+        const c = byId[id];
+        return `<div class="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
+          <span>${c.name} <small class="text-slate-400">Group ${c.group}</small></span>${poolBadge(c.pool)}
+        </div>`
+      }).join('')}</div>
+    </article>`).join('');
+}
+
+function renderTeams() {
+  teamGrid.innerHTML = countries.map(c => `
+    <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+      <div class="flex items-center justify-between">
+        <b>${c.name}</b><span class="font-mono text-sm text-slate-400">${c.fifaCode}</span>
+      </div>
+      <div class="mt-2 flex items-center gap-2"><span class="rounded-full bg-slate-950 px-2 py-1 text-xs font-bold text-white">Group ${c.group}</span>${poolBadge(c.pool)}</div>
+    </div>`).join('');
+}
+
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b => b.className = 'tab rounded-2xl px-5 py-3 font-bold text-white');
+  btn.className = 'tab rounded-2xl bg-white px-5 py-3 font-bold shadow';
+  document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+  document.getElementById(btn.dataset.tab).classList.remove('hidden');
+}));
+
+search.addEventListener('input', e => renderStandings(e.target.value));
+
+renderStandings();
+renderCards();
+renderTeams();
+participantCount.textContent = participants.length;
+</script>
+</body>
+</html>
