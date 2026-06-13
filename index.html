@@ -164,13 +164,6 @@
           <div class="rounded-3xl bg-amber-50 p-5"><b>Tiebreakers</b><p>Points, goal difference, goals scored.</p></div>
           <div class="rounded-3xl bg-sky-50 p-5"><b>Prizes</b><p>Top three split the pot 60%, 30%, 10%.</p></div>
         </div>
-        <div class="mt-5 rounded-3xl bg-slate-50 p-5">
-          <b>Real data feed</b>
-          <p class="mt-1 text-slate-600">
-            This SPA fetches match data from <code class="rounded bg-white px-2 py-1">https://worldcup26.ir/get/games</code>.
-            If that endpoint changes shape or blocks browser CORS, place a tiny proxy in front of it and point <code class="rounded bg-white px-2 py-1">SCORE_FEED_URL</code> to your own endpoint.
-          </p>
-        </div>
       </section>
     </section>
   </main>
@@ -208,7 +201,7 @@ const participants = [
   ['Mbuya',['COL','USA','NZL','GHA','HAI']], ['Luwi',['URU','KOR','JOR','QAT','IRN']],
   ['Mbumba',['COL','USA','PAN','TUN','CPV']], ['Jessica',['BRA','TUR','KSA','NZL','RSA']],
   ['Mwati',['COL','AUS','EGY','PAN','KSA']], ['Atarah',['FRA','KOR','CIV','SCO','ALG']],
-  ['Keshaun',['ENG','AUS','CUW','IRQ','CPV']], ['Frances',['GER','SWE','EGY','HAI','PAN']],
+  ['Keshaun',['ENG','AUS','CUW','IRQ','CPV']], ['Francis',['GER','SWE','EGY','HAI','PAN']],
   ['Wone',['POR','MEX','TUN','ALG','NZL']], ['Mwayi',['BEL','CAN','RSA','IRQ','UZB']],
   ['Kenzo',['GER','MAR','COD','JOR','CPV']], ['Ash',['NED','AUT','GHA','UZB','IRQ']],
   ['Ivy',['ARG','ECU','COD','HAI','RSA']], ['Daxon',['ARG','TUR','RSA','SCO','BIH']],
@@ -217,7 +210,8 @@ const participants = [
   ['Ruth',['BRA','SEN','GHA','CZE','BIH']], ['Reggie',['BRA','ECU','JOR','COD','NZL']],
   ['Bob',['URU','MAR','PAR','COD','BIH']], ['Phillis',['FRA','JPN','JOR','IRN','QAT']],
   ['Trevor',['ESP','SWE','BIH','PAR','IRN']], ['Adrian',['CRO','JPN','CZE','IRQ','QAT']],
-  ['Gloria',['CRO','NOR','QAT','CIV','CZE']]
+  ['Gloria',['CRO','NOR','QAT','CIV','CZE']],
+  ['Tionge',['GER','KOR','TUN','UZB','HAI']]
 ].map(([name, teamIds]) => ({ id:name.toLowerCase(), name, teamIds }));
 
 let matches = [];
